@@ -13,7 +13,7 @@ signals:
     void sample();
 
 public slots:
-    void sampleSlot();
+    Q_INVOKABLE void sampleSlot();
 };
 
 #endif // ISQMLCONTROLLER_H

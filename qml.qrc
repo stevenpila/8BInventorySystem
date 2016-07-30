@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/">
-        <file>ISMainScreen.qml</file>
+    <qresource prefix="/qml">
+        <file alias="ISMainScreen.qml">qml/ISMainScreen.qml</file>
     </qresource>
 </RCC>

@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QThread>
@@ -7,14 +7,14 @@
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     QQmlApplicationEngine engine;
 
     ISQmlController isQmlController;
     engine.rootContext()->setContextProperty("ISQmlController", &isQmlController);
 
-    engine.load(QUrl(QStringLiteral("qrc:/ISMainScreen.qml")));
+    engine.load(QUrl(QStringLiteral("qrc:/qml/ISMainScreen.qml")));
 
     return app.exec();
 }

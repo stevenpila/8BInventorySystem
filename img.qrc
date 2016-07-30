@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/img">
+        <file alias="home_selected.png">res/img/home_selected.png</file>
+        <file alias="home_default.png">res/img/home_default.png</file>
+        <file alias="report_default.png">res/img/report_default.png</file>
+        <file alias="report_selected.png">res/img/report_selected.png</file>
+    </qresource>
+</RCC>
