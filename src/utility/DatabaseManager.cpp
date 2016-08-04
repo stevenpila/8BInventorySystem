@@ -8,7 +8,7 @@ DatabaseManager::DatabaseManager()
 
         if(DB::STATUS_CODE::SUCCESS != retCode)
         {
-            LOG_ERROR(getStatusCodeMessage(retCode) << "! " << m_db.lastError().text())
+            LOG_ERROR(getErrorMessage(retCode))
         }
         else
         {
@@ -29,7 +29,7 @@ DatabaseManager::~DatabaseManager()
 
         if(DB::STATUS_CODE::SUCCESS != retCode)
         {
-            LOG_ERROR(getStatusCodeMessage(retCode) << "! " << m_db.lastError().text())
+            LOG_ERROR(getErrorMessage(retCode))
         }
         else
         {
@@ -243,7 +243,128 @@ DB::STATUS_CODE DatabaseManager::getAllInventoryItems(InventoryItemList_t& inven
     return DB::STATUS_CODE::SUCCESS;
 }
 
-DB::STATUS_CODE DatabaseManager::addInventoryItem(const InventoryModel& inventoryItem)
+DB::STATUS_CODE DatabaseManager::getInventoryItem(InventoryModel& inventoryItem) const
+{
+    m_errorMessage = "";
+
+    if(!m_db.isOpen())
+    {
+        return DB::STATUS_CODE::CONNECTION_NOT_OPENED;
+    }
+
+    QSqlQuery sqlQuery(DB::GET_INVENTORY_ITEM, m_db);
+
+    if(sqlQuery.lastError().isValid())
+    {
+        m_errorMessage = sqlQuery.lastError().text();
+        return DB::STATUS_CODE::CREATE_SQL_QUERY_FAILED;
+    }
+
+    sqlQuery.bindValue(":id", inventoryItem.getId());
+
+    if(DB::TABLE_INVENTORY_GET_BIND_VALUES_SIZE != sqlQuery.boundValues().size())
+    {
+        m_errorMessage = sqlQuery.lastError().text() + sqlQuery.boundValues().size();
+        return DB::STATUS_CODE::INCORRECT_BOUND_VALUES_SIZE;
+    }
+
+    if(!sqlQuery.exec())
+    {
+        m_errorMessage = sqlQuery.lastError().text() + sqlQuery.executedQuery();
+        return DB::STATUS_CODE::EXECUTE_SQL_QUERY_FAILED;
+    }
+
+    if(!sqlQuery.size())
+    {
+        return DB::STATUS_CODE::RECORD_NOT_FOUND;
+    }
+
+    sqlQuery.setForwardOnly(true);
+
+    if(sqlQuery.next())
+    {
+        inventoryItem.setId(sqlQuery.value("id").toULongLong());
+        inventoryItem.setItem(sqlQuery.value("item").toString());
+        inventoryItem.setQuantity(sqlQuery.value("quantity").toUInt());
+        inventoryItem.setPrice(sqlQuery.value("price").toFloat());
+    }
+
+    return DB::STATUS_CODE::SUCCESS;
+}
+
+DB::STATUS_CODE DatabaseManager::addInventoryItem(InventoryModel& inventoryItem)
+{
+    m_errorMessage = "";
+
+    if(!m_db.isOpen())
+    {
+        return DB::STATUS_CODE::CONNECTION_NOT_OPENED;
+    }
+
+    if(!m_db.transaction())
+    {
+        m_errorMessage =  m_db.lastError().text();
+        return DB::STATUS_CODE::START_TRANSACTION_FAILED;
+    }
+
+    DB::STATUS_CODE retCode = [&](InventoryModel& inventoryItem) -> DB::STATUS_CODE
+    {
+        QSqlQuery sqlQuery(m_db);
+
+        if(!sqlQuery.prepare(DB::ADD_INVENTORY_ITEM))
+        {
+            m_errorMessage = sqlQuery.lastError().text();
+            return DB::STATUS_CODE::PREPARE_SQL_QUERY_FAILED;
+        }
+
+        sqlQuery.bindValue(":item", inventoryItem.getItem());
+        sqlQuery.bindValue(":quantity", inventoryItem.getQuantity());
+        sqlQuery.bindValue(":price", inventoryItem.getPrice());
+
+        if(DB::TABLE_INVENTORY_ADD_BIND_VALUES_SIZE != sqlQuery.boundValues().size())
+        {
+            m_errorMessage = sqlQuery.lastError().text() + sqlQuery.boundValues().size();
+            return DB::STATUS_CODE::INCORRECT_BOUND_VALUES_SIZE;
+        }
+
+        if(sqlQuery.lastError().isValid())
+        {
+            m_errorMessage = sqlQuery.lastError().text();
+            return DB::STATUS_CODE::CREATE_SQL_QUERY_FAILED;
+        }
+
+        if(!sqlQuery.exec())
+        {
+            m_errorMessage = sqlQuery.lastError().text() + sqlQuery.executedQuery(); // TODO - print also bound values
+            return DB::STATUS_CODE::EXECUTE_SQL_QUERY_FAILED;
+        }
+
+        inventoryItem.setId(sqlQuery.lastInsertId().toUInt());
+
+        return DB::STATUS_CODE::SUCCESS;
+    }(inventoryItem);
+
+    if(DB::STATUS_CODE::SUCCESS != retCode)
+    {
+        if(!m_db.rollback())
+        {
+            m_errorMessage += m_db.lastError().text();
+            retCode += DB::STATUS_CODE::ROLLBACK_TRANSACTION_FAILED;
+        }
+    }
+    else
+    {
+        if(!m_db.commit())
+        {
+            m_errorMessage = m_db.lastError().text();
+            retCode += DB::STATUS_CODE::COMMIT_TRANSACTION_FAILED;
+        }
+    }
+
+    return retCode;
+}
+
+DB::STATUS_CODE DatabaseManager::updateInventoryItem(const InventoryModel& inventoryItem)
 {
     m_errorMessage = "";
 
@@ -262,7 +383,7 @@ DB::STATUS_CODE DatabaseManager::addInventoryItem(const InventoryModel& inventor
     {
         QSqlQuery sqlQuery(m_db);
 
-        if(!sqlQuery.prepare(DB::ADD_INVENTORY_ITEM))
+        if(!sqlQuery.prepare(DB::UPDATE_INVENTORY_ITEM))
         {
             m_errorMessage = sqlQuery.lastError().text();
             return DB::STATUS_CODE::PREPARE_SQL_QUERY_FAILED;
@@ -272,7 +393,9 @@ DB::STATUS_CODE DatabaseManager::addInventoryItem(const InventoryModel& inventor
         sqlQuery.bindValue(":quantity", inventoryItem.getQuantity());
         sqlQuery.bindValue(":price", inventoryItem.getPrice());
 
-        if(DB::TABLE_INVENTORY_ADD_BIND_VALUES_SIZE != sqlQuery.boundValues().size())
+        sqlQuery.bindValue(":id", inventoryItem.getId());
+
+        if(DB::TABLE_INVENTORY_UPDATE_BIND_VALUE_SIZE != sqlQuery.boundValues().size())
         {
             m_errorMessage = sqlQuery.lastError().text() + sqlQuery.boundValues().size();
             return DB::STATUS_CODE::INCORRECT_BOUND_VALUES_SIZE;
@@ -313,19 +436,19 @@ DB::STATUS_CODE DatabaseManager::addInventoryItem(const InventoryModel& inventor
     return retCode;
 }
 
-const QString& DatabaseManager::getStatusCodeMessage(const DB::STATUS_CODE& statusCode) const
+const char* DatabaseManager::getErrorMessage(const DB::STATUS_CODE& statusCode) const
 {
     DB::StatusCodeMessageList_t::ConstIterator iterStatusCodeMessage = DB::STATUS_MESSAGE.constFind(statusCode);
 
     if(iterStatusCodeMessage == DB::STATUS_MESSAGE.constEnd())
     {
-        return EMPTY_STRING;
+        return nullptr;
     }
 
-    return iterStatusCodeMessage.value();
+    return QString(iterStatusCodeMessage.value() + m_errorMessage).toStdString().c_str();
 }
 
-const QString& DatabaseManager::getErrorMessage() const
+const char* DatabaseManager::getErrorMessage() const
 {
-    return m_errorMessage;
+    return m_errorMessage.toStdString().c_str();
 }

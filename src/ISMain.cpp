@@ -1,20 +1,20 @@
-#include <QApplication>
-#include <QQmlApplicationEngine>
+#include <QQuickView>
+#include <QGuiApplication>
 #include <QQmlContext>
-#include <QThread>
 
 #include <ISQmlController.h>
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+    QGuiApplication app(argc, argv);
 
-    QQmlApplicationEngine engine;
+    QQuickView view;
 
     ISQmlController isQmlController;
-    engine.rootContext()->setContextProperty("ISQmlController", &isQmlController);
+    view.rootContext()->setContextProperty("ISQmlController", &isQmlController);
 
-    engine.load(QUrl(QStringLiteral("qrc:/qml/ISMainScreen.qml")));
+    view.setSource(QUrl(QStringLiteral("qrc:/qml/ISHomeScreen.qml")));
+    view.show();
 
     return app.exec();
 }

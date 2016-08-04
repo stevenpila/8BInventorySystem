@@ -16,10 +16,12 @@ public:
     ~DatabaseManager();
 
     DB::STATUS_CODE getAllInventoryItems(InventoryItemList_t&) const;
-    DB::STATUS_CODE addInventoryItem(const InventoryModel&);
+    DB::STATUS_CODE getInventoryItem(InventoryModel&) const;
+    DB::STATUS_CODE addInventoryItem(InventoryModel&);
+    DB::STATUS_CODE updateInventoryItem(const InventoryModel&);
 
-    const QString& getStatusCodeMessage(const DB::STATUS_CODE&) const;
-    const QString& getErrorMessage() const;
+    const char* getErrorMessage(const DB::STATUS_CODE&) const;
+    const char* getErrorMessage() const;
 
 private:
     DB::STATUS_CODE createConnection();

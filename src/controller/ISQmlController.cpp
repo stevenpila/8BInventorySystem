@@ -19,13 +19,15 @@ void ISQmlController::sampleSlot()
     DB::STATUS_CODE retCode = dbManager.addInventoryItem(inventoryItem);
     if(DB::STATUS_CODE::SUCCESS != retCode)
     {
-        LOG_ERROR(dbManager.getStatusCodeMessage(retCode) << dbManager.getErrorMessage())
+        LOG_ERROR(dbManager.getErrorMessage(retCode))
     }
+
+    LOG_INFO("inventoryItem.getId() - " << inventoryItem.getId())
 
     InventoryItemList_t inventoryItemList;
     if(DB::STATUS_CODE::SUCCESS != (retCode = dbManager.getAllInventoryItems(inventoryItemList)))
     {
-        LOG_ERROR(dbManager.getStatusCodeMessage(retCode) << dbManager.getErrorMessage())
+        LOG_ERROR(dbManager.getErrorMessage(retCode))
     }
 
     qDebug() << "inventoryItemList size: " << inventoryItemList.size();

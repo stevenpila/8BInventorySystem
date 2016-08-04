@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/qml">
         <file alias="ISMainScreen.qml">qml/ISMainScreen.qml</file>
+        <file alias="ISHomeScreen.qml">qml/ISHomeScreen.qml</file>
+        <file alias="ISHomeTabContent.qml">qml/ISHomeTabContent.qml</file>
+        <file alias="ISReportTabContent.qml">qml/ISReportTabContent.qml</file>
+        <file alias="ISHomeScreenTabs.qml">qml/ISHomeScreenTabs.qml</file>
     </qresource>
 </RCC>

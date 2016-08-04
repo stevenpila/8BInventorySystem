@@ -35,6 +35,10 @@ INCLUDEPATH += \
 
 DISTFILES += \
     qml/ISMainScreen.qml \
+    qml/ISHomeScreen.qml \
     res/js/ISHelperScript.js \
     README.md \
-    deployment.pri
+    deployment.pri \
+    qml/ISHomeTabContent.qml \
+    qml/ISReportTabContent.qml \
+    qml/ISHomeScreenTabs.qml

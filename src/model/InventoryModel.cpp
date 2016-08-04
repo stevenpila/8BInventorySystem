@@ -1,6 +1,10 @@
 #include "InventoryModel.h"
 
-InventoryModel::InventoryModel(QObject *parent) : QObject(parent)
+InventoryModel::InventoryModel(QObject *parent) : QObject(parent),
+      m_id(0),
+      m_item(),
+      m_quantity(0),
+      m_price(0.0)
 {
     if(!connect(this, SIGNAL(sigItemChanged(QString)), SLOT(slotItemChanged(QString))))
     {
